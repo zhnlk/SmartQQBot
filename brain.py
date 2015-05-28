@@ -146,6 +146,12 @@ class Brain():
         # 测试使用findall 以及使用关键词评分系统 判断内容是否地点
         return rs
 
+    def anaStnQQByRE(self, stn):
+        rs = []
+        qqPattern = re.compile(ur'q.*?([1-9]\d{4,10})', re.I)
+        rs = list(qqPattern.findall(stn))
+        return rs
+
     def extract_info(self, stn, self_print=False):
         stn = str(stn).decode("utf-8")
         # 综合性提取句子中的信息
@@ -153,6 +159,7 @@ class Brain():
         item = []
         pos = []
         contact = []
+        qq = []
         other = []
 
         # 替换长度大于等于2的空格为单空格
@@ -169,9 +176,10 @@ class Brain():
             pass
         pos += self.anaStnPosByRE(stn)
         contact += self.anaStnContactByRE(stn)
+        qq += self.anaStnQQByRE(stn)
 
         for word in cStn:
-            if word.flag == "nr":
+            if word.flag == "nr" and len(word.word) > 1:
                 name.append(word.word)
             elif word.flag == "ns":
                 pos.append(word.word)
@@ -197,18 +205,21 @@ class Brain():
                     pos.remove(i)
                     # print("romove", str(i))
 
-        rs = {'name': set(name), 'item': set(item), 'pos': set(pos), 'contact': set(contact), 'other': set(other)}
-        if rs:
+        rs = {'name': set(name), 'item': set(item), 'pos': set(pos), 'contact': set(contact), 'qq': set(qq), 'other': set(other)}
+
+        if len(rs['pos'] and (rs['contact'] or rs['item'] or rs['name'])):
+
             if self_print:
                 print(stn)
                 print("姓名:%s" % "   ".join(rs['name']))
                 print("丢失物品:%s" % "   ".join(rs['item']))
                 print("位置:%s" % "   ".join(rs['pos']))
                 print("联系方式:%s" % "   ".join(rs['contact']))
+                print("QQ:%s" % "   ".join(rs['qq']))
                 print("其他信息:%s\n\n" % "   ".join(rs['other']))
             return rs
         else:
-            return {}
+            return False
 
     def start_up(self):
         try:
@@ -221,20 +232,21 @@ class Brain():
         except:
             print("jieba load user dictionary error.")
             return False
+        self.loadSample()
         return True
 
     def fullProcessStn(self, stn):
         stn = str(stn).decode("utf-8")
-
         if self.isLostMsg(stn):
-            return self.extract_info(stn)
-        else:
-            return False
+            tmpinfo = self.extract_info(stn)
+            if tmpinfo:
+                return tmpinfo
+        return False
 
 if __name__ == '__main__':
     AIbrain = Brain()
     AIbrain.start_up()
-    usrIp = raw_input("Please input the sentense you want to process:\n")
+    usrIp = raw_input("Please input the sentence you want to process:\n")
     while usrIp:
         tmpRs = AIbrain.fullProcessStn(usrIp)
         if tmpRs:
@@ -243,8 +255,9 @@ if __name__ == '__main__':
             print("丢失物品:%s" % "   ".join(tmpRs['item']))
             print("位置:%s" % "   ".join(tmpRs['pos']))
             print("联系方式:%s" % "   ".join(tmpRs['contact']))
+            print("QQ号:%s" % "   ".join(tmpRs['qq']))
             print("其他信息:%s\n\n" % "   ".join(tmpRs['other']))
         else:
             print("\nIt is not a lost found message.\n")
         print("="*50)
-        usrIp = raw_input("Please input the sentense you want to process:\n")
+        usrIp = raw_input("Please input the sentence you want to process:\n")

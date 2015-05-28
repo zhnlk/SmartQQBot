@@ -9,6 +9,7 @@ import datetime
 import time
 import threading
 import logging
+from brain import Brain
 
 from HttpClient import HttpClient
 
@@ -522,12 +523,15 @@ class group_thread(threading.Thread):
                 self.reply("没找到你说的那句话哦")
 
     def reply(self, content):
+        fix_content = str(content.replace("\\", "\\\\\\\\").replace("\n", "\\\\n").replace("\t", "\\\\t")).decode("utf-8")
+
         reqURL = "http://d.web2.qq.com/channel/send_qun_msg2"
         data = (
-            ('r', '{{"group_uin":{0}, "face":564,"content":"[\\"{4}\\",[\\"font\\",{{\\"name\\":\\"Arial\\",\\"size\\":\\"10\\",\\"style\\":[0,0,0],\\"color\\":\\"000000\\"}}]]","clientid":"{1}","msg_id":{2},"psessionid":"{3}"}}'.format(self.guin, ClientID, msgId, PSessionID, content.replace("\\", "\\\\\\\\"))),
+            ('r', '{{"group_uin":{0}, "face":564,"content":"[\\"{4}\\",[\\"font\\",{{\\"name\\":\\"Arial\\",\\"size\\":\\"10\\",\\"style\\":[0,0,0],\\"color\\":\\"000000\\"}}]]","clientid":"{1}","msg_id":{2},"psessionid":"{3}"}}'.format(self.guin, ClientID, msgId, PSessionID, fix_content)),
             ('clientid', ClientID),
             ('psessionid', PSessionID)
         )
+        # print data
         logging.info("Reply package: " + str(data))
         rsp = HttpClient_Ist.Post(reqURL, data, Referer)
         if rsp:
@@ -555,6 +559,8 @@ class group_thread(threading.Thread):
                 #             if not self.callout(content):
                 #                 pass
 
+                if self.lostFound(content):
+                    return
                 if self.follow(send_uin, content):
                     return
                 if self.tucao(content):
@@ -566,6 +572,21 @@ class group_thread(threading.Thread):
         else:
             print "message seq repeat detected."
         self.lastseq = seq
+
+    def lostFound(self, content):
+        tmpRs = AIbrain.fullProcessStn(content)
+        replyContent = ""
+        if tmpRs:
+            replyContent += "姓名:%s\n" % "   ".join(tmpRs['name'])
+            replyContent += "丢失物品:%s\n" % "   ".join(tmpRs['item'])
+            replyContent += "位置:%s\n" % "   ".join(tmpRs['pos'])
+            replyContent += "联系方式:%s\n" % "   ".join(tmpRs['contact'])
+            replyContent += "QQ号:%s\n" % "   ".join(tmpRs['qq'])
+            replyContent += "其他信息:%s\n" % "   ".join(tmpRs['other'])
+
+            self.reply(replyContent)
+            return True
+        return False
 
     def tucao(self, content):
         for key in self.replyList:
@@ -583,7 +604,6 @@ class group_thread(threading.Thread):
                 print "已复读：{" + str(content) + "}"
                 return True
         self.last1 = content
-        
         return False
 
     def follow(self, send_uin, content):
@@ -635,6 +655,9 @@ class group_thread(threading.Thread):
 # -----------------
 
 if __name__ == "__main__":
+    AIbrain = Brain()
+    AIbrain.start_up()
+
     vpath = './v.jpg'
     qq = 0
     if len(sys.argv) > 1:
@@ -653,10 +676,11 @@ if __name__ == "__main__":
     t_check.start()
 
     while 1:
-        # if not t_check.isAlive():
-        #     exit(0)
-        console_input = raw_input(">>")
-        try:
-            command_handler(console_input)
-        except e:
-            print "指令有误重新来", e
+        tmpList = []
+        with open("./config/groupCheckList") as groupListFile:
+            for group in groupListFile:
+                tmpList.append(str(int(group)))
+            if GroupWatchList != tmpList:
+                GroupWatchList = tmpList
+                print "当前群关注列表:", GroupWatchList
+        time.sleep(5)
