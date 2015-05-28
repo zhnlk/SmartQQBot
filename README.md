@@ -1,4 +1,4 @@
-SmartQQ-Bot 
+SmartQQ-Bot (LostFound Version)
 =========
 ***该分支使用登陆部分逻辑与代码参考了[原名：SmartQQ-for-Raspberry-Pi(PiWebQQV2)](https://github.com/xqin/SmartQQ-for-Raspberry-Pi)这一项目***，以此为基础制作了基于SmartQQ的自动机器人。
 
