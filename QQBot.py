@@ -36,24 +36,35 @@ AdminQQ = '0'
 
 initTime = time.time()
 
-
 logging.basicConfig(filename='Login.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s[line:%(lineno)d] %(levelname)s %(message)s', datefmt='%a, %d %b %Y %H:%M:%S')
 
 conf = ConfigParser.ConfigParser()
+
 if not os.path.isdir("./config"):
     os.mkdir("./config")
     print "已建立config文件夹"
-if not os.path.exists("./config/QQBot.conf"):
+if not os.path.exists("./config/QQBot_default.conf"):
     open("./config/groupCheckList", "w")
-    print "已建立配置文件QQBot.conf"
+    print "已建立配置文件QQBot_default.conf"
 else:
-    conf.read('./config/QQBot.conf')
-    print "读取QQBot.conf配置"
+    conf.read('./config/QQBot_default.conf')
+    print "读取QQBot_default.conf配置"
+
+
+# pm config set
+QA_activated = bool(conf.getint("pm", "QA_module_activated"))
+
+# group config set
+tucao_activated = bool(conf.getint("group", "tucao_module_activated"))
+LF_activated = bool(conf.getint("group", "LF_module_activated"))
+repeat_activated = bool(conf.getint("group", "repeat_module_activated"))
+follow_activated = bool(conf.getint("group", "follow_module_activated"))
+callout_activated = bool(conf.getint("group", "callout_module_activated"))
+
 
 # -----------------
 # 方法声明
 # -----------------
-
 
 def pass_time():
     global initTime
@@ -186,6 +197,7 @@ def msg_handler(msgObj):
                 g_exist = group_thread_exist(gid)
                 if g_exist:
                     g_exist.handle(tuin, txt, seq)
+                    print "群(%s)的消息: %s" % (str(gid), txt)
                 else:
                     tmpThread = group_thread(guin)
                     tmpThread.start()
@@ -193,7 +205,8 @@ def msg_handler(msgObj):
                     tmpThread.handle(tuin, txt, seq)
                     print "群线程已生成"
             else:
-                print str(gid) + "群有动态，但是没有被监控"
+                # print str(gid) + "群有动态，但是没有被监控"
+                pass
 
             # from_account = uin_to_account(tuin)
             # print "{0}:{1}".format(from_account, txt)
@@ -482,6 +495,9 @@ class pmchat_thread(threading.Thread):
         logging.info("Reply to " + str(self.tqq) + ":" + str(content))
 
     def push(self, ipContent, msgid):
+        if not QA_activated:
+            return False
+
         if msgid != self.lastMsgId:
             self.reply(self.replys[self.stage])
             self.inputs.append(ipContent)
@@ -494,6 +510,7 @@ class pmchat_thread(threading.Thread):
         else:
             logging.info("pm message repeat detected.")
         self.lastMsgId = msgid
+        return True
 
 
 class group_thread(threading.Thread):
@@ -514,6 +531,9 @@ class group_thread(threading.Thread):
             os.makedirs("./groupReplys")
 
     def learn(self, key, value, needreply=True):
+        if not tucao_activated:
+            return False
+
         if key in self.replyList:
             self.replyList[key].append(value)
         else:
@@ -524,6 +544,9 @@ class group_thread(threading.Thread):
             self.save()
 
     def delete(self, key, value, needreply=True):
+        if not tucao_activated:
+            return False
+
         if key in self.replyList and self.replyList[key].count(value):
             self.replyList[key].remove(value)
             if needreply:
@@ -586,6 +609,9 @@ class group_thread(threading.Thread):
         self.lastseq = seq
 
     def lostFound(self, content):
+        if not LF_activated:
+            return False
+
         tmpRs = AIbrain.fullProcessStn(content)
         replyContent = ""
         if tmpRs:
@@ -601,6 +627,9 @@ class group_thread(threading.Thread):
         return False
 
     def tucao(self, content):
+        if not tucao_activated:
+            return False
+
         for key in self.replyList:
             if str(key) in content and self.replyList[key]:
                 rd = random.randint(0, len(self.replyList[key]) - 1)
@@ -610,6 +639,9 @@ class group_thread(threading.Thread):
         return False
 
     def repeat(self, content):
+        if not repeat_activated:
+            return False
+
         if self.last1 == str(content) and content != '' and content != ' ':
             if self.repeatPicture or "[图片]" not in content:
                 self.reply(content)
@@ -619,6 +651,9 @@ class group_thread(threading.Thread):
         return False
 
     def follow(self, send_uin, content):
+        if not follow_activated:
+            return False
+
         pattern = re.compile(r'^(?:!|！)(follow|unfollow) (\d+|me)')
         match = pattern.match(content)
 
@@ -642,12 +677,12 @@ class group_thread(threading.Thread):
         return False
 
     def save(self):
-        with open("groupReplys/" + str(self.gid) + ".save", "w+") as savefile:
+        with open("./groupReplys/" + str(self.gid) + ".save", "w+") as savefile:
             savefile.write(json.dumps(self.replyList))
 
     def load(self):
         try:
-            with open("groupReplys/" + str(self.gid) + ".save", "r") as savefile:
+            with open("./groupReplys/" + str(self.gid) + ".save", "r") as savefile:
                 saves = savefile.read()
                 if saves:
                     self.replyList = json.loads(saves)
@@ -655,7 +690,8 @@ class group_thread(threading.Thread):
             print "读取存档出错", e, Exception
 
     def callout(self, content):
-        if "智障机器人" in content:
+        print conf.getint("group", "callout_module_activated")
+        if "智障机器人" in content and conf.getint("group", "callout_module_activated"):
             self.reply("干嘛（‘·д·）")
             print str(self.gid) + "有人叫我"
             return True
@@ -699,4 +735,18 @@ if __name__ == "__main__":
             if GroupWatchList != tmpList:
                 GroupWatchList = tmpList
                 print "当前群关注列表:", GroupWatchList
+
+        # 更新config
+        conf.read('./config/QQBot_default.conf')
+
+        # pm config set
+        QA_activated = conf.getint("pm", "QA_module_activated")
+
+        # group config set
+        tucao_activated = conf.getint("group", "tucao_module_activated")
+        LF_activated = conf.getint("group", "LF_module_activated")
+        repeat_activated = conf.getint("group", "repeat_module_activated")
+        follow_activated = conf.getint("group", "follow_module_activated")
+        callout_activated = conf.getint("group", "callout_module_activated")
+        # print callout_activated
         time.sleep(5)
