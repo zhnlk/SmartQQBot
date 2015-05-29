@@ -144,6 +144,7 @@ def msg_handler(msgObj):
             txt = combine_msg(msg['value']['content'])
             tuin = msg['value']['from_uin']
             msgid = msg['value']['msg_id2']
+            msgTime = msg['value']['time']
             from_account = uin_to_account(tuin)
             isSess = 0
             group_sig = ''
@@ -151,7 +152,7 @@ def msg_handler(msgObj):
             # print "{0}:{1}".format(from_account, txt)
             targetThread = thread_exist(from_account)
             if targetThread:
-                targetThread.push(txt, msgid)
+                targetThread.push(txt, msgid, msgTime)
             else:
                 if msgType == 'sess_message':
                     isSess = 1
@@ -171,7 +172,7 @@ def msg_handler(msgObj):
                 tmpThread = pmchat_thread(tuin, service_type, group_sig, isSess)
                 tmpThread.start()
                 ThreadList.append(tmpThread)
-                tmpThread.push(txt, msgid)
+                tmpThread.push(txt, msgid, msgTime)
 
             # print "{0}:{1}".format(self.FriendList.get(tuin, 0), txt)
 
@@ -192,17 +193,19 @@ def msg_handler(msgObj):
             gid = msg['value']['info_seq']
             tuin = msg['value']['send_uin']
             seq = msg['value']['seq']
+            msgTime = msg['value']['time']
+            timeStr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(msgTime))
             GroupList[guin] = gid
             if str(gid) in GroupWatchList:
                 g_exist = group_thread_exist(gid)
                 if g_exist:
-                    g_exist.handle(tuin, txt, seq)
-                    print "群(%s)的消息: %s" % (str(gid), txt)
+                    g_exist.handle(tuin, txt, seq, msgTime)
+                    print "%s 群(%s)的消息: %s" % (timeStr, str(gid), txt)
                 else:
                     tmpThread = group_thread(guin)
                     tmpThread.start()
                     GroupThreadList.append(tmpThread)
-                    tmpThread.handle(tuin, txt, seq)
+                    tmpThread.handle(tuin, txt, seq, msgTime)
                     print "群线程已生成"
             else:
                 # print str(gid) + "群有动态，但是没有被监控"
@@ -494,7 +497,7 @@ class pmchat_thread(threading.Thread):
         send_msg(self.tuin, str(content), self.service_type, self.group_sig, self.isSess)
         logging.info("Reply to " + str(self.tqq) + ":" + str(content))
 
-    def push(self, ipContent, msgid):
+    def push(self, ipContent, msgid, msgTime):
         if not QA_activated:
             return False
 
@@ -574,7 +577,7 @@ class group_thread(threading.Thread):
             logging.info("[Reply to group " + str(self.gid) + "]:" + str(content))
         return rsp
 
-    def handle(self, send_uin, content, seq):
+    def handle(self, send_uin, content, seq, msgTime):
         # 避免重复处理相同信息
         if seq != self.lastseq:
             pattern = re.compile(r'^(?:!|！)(learn|delete) {(.+)}{(.+)}')
@@ -594,7 +597,7 @@ class group_thread(threading.Thread):
                 #             if not self.callout(content):
                 #                 pass
 
-                if self.lostFound(content):
+                if self.lostFound(content, msgTime):
                     return
                 if self.follow(send_uin, content):
                     return
@@ -608,13 +611,15 @@ class group_thread(threading.Thread):
             print "message seq repeat detected."
         self.lastseq = seq
 
-    def lostFound(self, content):
+    def lostFound(self, content, msgTime):
         if not LF_activated:
             return False
 
         tmpRs = AIbrain.fullProcessStn(content)
         replyContent = ""
         if tmpRs:
+            timeStr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(msgTime))
+            replyContent += "消息发布时间:%s\n" % (timeStr)
             replyContent += "姓名:%s\n" % "   ".join(tmpRs['name'])
             replyContent += "丢失物品:%s\n" % "   ".join(tmpRs['item'])
             replyContent += "位置:%s\n" % "   ".join(tmpRs['pos'])
