@@ -40,7 +40,15 @@ initTime = time.time()
 logging.basicConfig(filename='Login.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s[line:%(lineno)d] %(levelname)s %(message)s', datefmt='%a, %d %b %Y %H:%M:%S')
 
 conf = ConfigParser.ConfigParser()
-conf.read('./config/QQBot.conf')
+if not os.path.isdir("./config"):
+    os.mkdir("./config")
+    print "已建立config文件夹"
+if not os.path.exists("./config/QQBot.conf"):
+    open("./config/groupCheckList", "w")
+    print "已建立配置文件QQBot.conf"
+else:
+    conf.read('./config/QQBot.conf')
+    print "读取QQBot.conf配置"
 
 # -----------------
 # 方法声明
@@ -681,6 +689,10 @@ if __name__ == "__main__":
 
     while 1:
         tmpList = []
+        if not os.path.exists("./config/groupCheckList"):
+            open("./config/groupCheckList", "w")
+            print "已建立群关注列表文件groupCheckList"
+
         with open("./config/groupCheckList") as groupListFile:
             for group in groupListFile:
                 tmpList.append(str(int(group)))
