@@ -730,6 +730,9 @@ if __name__ == "__main__":
 
     while 1:
         tmpList = []
+        if not os.path.isdir("./config"):
+            os.mkdir("./config")
+            print "已建立config文件夹"
         if not os.path.exists("./config/groupCheckList"):
             open("./config/groupCheckList", "w")
             print "已建立群关注列表文件groupCheckList"
