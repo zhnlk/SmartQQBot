@@ -10,6 +10,7 @@ import time
 import threading
 import logging
 import ConfigParser
+import csv
 from brain import Brain
 
 from HttpClient import HttpClient
@@ -619,6 +620,78 @@ class group_thread(threading.Thread):
         replyContent = ""
         if tmpRs:
             timeStr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(msgTime))
+
+            # 文件保存
+            csvRow = [timeStr.encode('gbk'), "/".join(tmpRs['name']).encode('gbk'), "/".join(tmpRs['acad']).encode('gbk'), "/".join(tmpRs['major']).encode('gbk'), "/".join(tmpRs['cardNum']).encode('gbk'), "/".join(tmpRs['item']).encode('gbk'), "/".join(tmpRs['itemDetail']).encode('gbk'), "/".join(tmpRs['pos']).encode('gbk'), "/".join(tmpRs['contact']).encode('gbk'), content.encode('gbk')]
+            today_csv_file = conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + ".csv"
+            if not os.path.exists(today_csv_file):
+                csvFile = open(today_csv_file, "a")
+                csv_writer = csv.writer(csvFile, dialect='excel')
+                csv_writer.writerow(["时间（年月日）".encode('gbk'), "姓名".encode('gbk'), "学院".encode('gbk'), "专业".encode('gbk'), "卡号".encode('gbk'), "物品".encode('gbk'), "物品特征".encode('gbk'), "地点".encode('gbk'), "联系方式".encode('gbk'), "原文".encode('gbk')])
+            else:
+                csvFile = open(today_csv_file, "a")
+                csv_writer = csv.writer(csvFile, dialect='excel')
+
+            csv_writer.writerow(csvRow)
+            csvFile.close()
+
+            # 分学院保存
+            if len(tmpRs['acad']):
+                for acad in tmpRs['acad']:
+                    if not os.path.exists(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-" + acad + ".csv"):
+                        csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-" + acad + ".csv", "a")
+                        csv_writer = csv.writer(csvFile, dialect='excel')
+                        csv_writer.writerow(["时间（年月日）".encode('gbk'), "姓名".encode('gbk'), "学院".encode('gbk'), "专业".encode('gbk'), "卡号".encode('gbk'), "物品".encode('gbk'), "物品特征".encode('gbk'), "地点".encode('gbk'), "联系方式".encode('gbk'), "原文".encode('gbk')])
+                    else:
+                        csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-" + acad + ".csv", "a")
+                        csv_writer = csv.writer(csvFile, dialect='excel')
+                    csv_writer.writerow(csvRow)
+                    csvFile.close()
+
+            # 分地点保存
+            if len(tmpRs['pos']):
+                for pos in tmpRs['pos']:
+                    if "二饭" in pos:
+                        if not os.path.exists(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-二饭.csv"):
+                            csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-二饭.csv", "a")
+                            csv_writer = csv.writer(csvFile, dialect='excel')
+                            csv_writer.writerow(["时间（年月日）".encode('gbk'), "姓名".encode('gbk'), "学院".encode('gbk'), "专业".encode('gbk'), "卡号".encode('gbk'), "物品".encode('gbk'), "物品特征".encode('gbk'), "地点".encode('gbk'), "联系方式".encode('gbk'), "原文".encode('gbk')])
+                        else:
+                            csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-二饭.csv", "a")
+                            csv_writer = csv.writer(csvFile, dialect='excel')
+                        csv_writer.writerow(csvRow)
+                        csvFile.close()
+                    elif "一饭" in pos:
+                        if not os.path.exists(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-一饭.csv"):
+                            csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-一饭.csv", "a")
+                            csv_writer = csv.writer(csvFile, dialect='excel')
+                            csv_writer.writerow(["时间（年月日）".encode('gbk'), "姓名".encode('gbk'), "学院".encode('gbk'), "专业".encode('gbk'), "卡号".encode('gbk'), "物品".encode('gbk'), "物品特征".encode('gbk'), "地点".encode('gbk'), "联系方式".encode('gbk'), "原文".encode('gbk')])
+                        else:
+                            csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-一饭.csv", "a")
+                            csv_writer = csv.writer(csvFile, dialect='excel')
+                        csv_writer.writerow(csvRow)
+                        csvFile.close()
+                    elif "图书馆" in pos:
+                        if not os.path.exists(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-图书馆.csv"):
+                            csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-图书馆.csv", "a")
+                            csv_writer = csv.writer(csvFile, dialect='excel')
+                            csv_writer.writerow(["时间（年月日）".encode('gbk'), "姓名".encode('gbk'), "学院".encode('gbk'), "专业".encode('gbk'), "卡号".encode('gbk'), "物品".encode('gbk'), "物品特征".encode('gbk'), "地点".encode('gbk'), "联系方式".encode('gbk'), "原文".encode('gbk')])
+                        else:
+                            csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-图书馆.csv", "a")
+                            csv_writer = csv.writer(csvFile, dialect='excel')
+                        csv_writer.writerow(csvRow)
+                        csvFile.close()
+                    else:
+                        if not os.path.exists(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-其他地区.csv"):
+                            csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-其他地区.csv", "a")
+                            csv_writer = csv.writer(csvFile, dialect='excel')
+                            csv_writer.writerow(["时间（年月日）".encode('gbk'), "姓名".encode('gbk'), "学院".encode('gbk'), "专业".encode('gbk'), "卡号".encode('gbk'), "物品".encode('gbk'), "物品特征".encode('gbk'), "地点".encode('gbk'), "联系方式".encode('gbk'), "原文".encode('gbk')])
+                        else:
+                            csvFile = open(conf.get("save", "LF_csv_file_dir") + time.strftime('%Y-%m-%d', time.localtime(msgTime)) + "-其他地区.csv", "a")
+                            csv_writer = csv.writer(csvFile, dialect='excel')
+                        csv_writer.writerow(csvRow)
+                        csvFile.close()
+
             replyContent += "消息发布时间:%s\n" % (timeStr)
             replyContent += "姓名:%s\n" % "   ".join(tmpRs['name'])
             replyContent += "丢失物品:%s\n" % "   ".join(tmpRs['item'])

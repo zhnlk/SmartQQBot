@@ -153,11 +153,13 @@ class Brain():
         return rs
 
     def extract_info(self, stn, self_print=False):
+
         stn = str(stn).decode("utf-8")
         # 综合性提取句子中的信息
         name = []
         item = []
         pos = []
+        acad = []
         contact = []
         qq = []
         other = []
@@ -188,6 +190,7 @@ class Brain():
                 item.append(word.word)
             # 此处使用自创标识na，代表学院名称
             elif word.flag == "na":
+                acad.append(word.word)
                 contact.append(word.word)
 
         # 位置去重复
@@ -205,9 +208,9 @@ class Brain():
                     pos.remove(i)
                     # print("romove", str(i))
 
-        rs = {'name': set(name), 'item': set(item), 'pos': set(pos), 'contact': set(contact), 'qq': set(qq), 'other': set(other)}
+        rs = {'name': set(name), 'item': set(item), 'itemDetail': set([]), 'cardNum': set([]), 'pos': set(pos), 'acad': set(acad), 'major': set([]), 'contact': set(contact), 'qq': set(qq), 'other': set(other)}
 
-        if len(rs['pos'] and (rs['contact'] or rs['item'] or rs['name'])):
+        if len(rs['pos']) + len(rs['item']) + len(rs['contact']) + len(rs['name']) >= 1:
 
             if self_print:
                 print(stn)
