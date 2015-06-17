@@ -152,12 +152,19 @@ class Brain():
         rs = list(qqPattern.findall(stn))
         return rs
 
+    def anaStnCardNumByRE(self, stn):
+        rs = []
+        qqPattern = re.compile(ur'卡号.*?([\d\*\.][\d \*\.]{17,23}[\d\*\.])', re.I)
+        rs = list(qqPattern.findall(stn))
+        return rs
+
     def extract_info(self, stn, self_print=False):
 
         stn = str(stn).decode("utf-8")
         # 综合性提取句子中的信息
         name = []
         item = []
+        cardNum = []
         pos = []
         acad = []
         contact = []
@@ -179,6 +186,7 @@ class Brain():
         pos += self.anaStnPosByRE(stn)
         contact += self.anaStnContactByRE(stn)
         qq += self.anaStnQQByRE(stn)
+        cardNum += self.anaStnCardNumByRE(stn)
 
         for word in cStn:
             if word.flag == "nr" and len(word.word) > 1:
@@ -208,7 +216,7 @@ class Brain():
                     pos.remove(i)
                     # print("romove", str(i))
 
-        rs = {'name': set(name), 'item': set(item), 'itemDetail': set([]), 'cardNum': set([]), 'pos': set(pos), 'acad': set(acad), 'major': set([]), 'contact': set(contact), 'qq': set(qq), 'other': set(other)}
+        rs = {'name': set(name), 'item': set(item), 'itemDetail': set([]), 'cardNum': set(cardNum), 'pos': set(pos), 'acad': set(acad), 'major': set([]), 'contact': set(contact), 'qq': set(qq), 'other': set(other)}
 
         if len(rs['pos']) + len(rs['item']) + len(rs['contact']) + len(rs['name']) >= 1:
 

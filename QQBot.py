@@ -37,35 +37,27 @@ AdminQQ = '0'
 
 initTime = time.time()
 
-logging.basicConfig(filename='Login.log', level=logging.DEBUG, format='%(asctime)s  %(filename)s[line:%(lineno)d] %(levelname)s %(message)s', datefmt='%a, %d %b %Y %H:%M:%S')
-
-conf = ConfigParser.ConfigParser()
-
-if not os.path.isdir("./config"):
-    os.mkdir("./config")
-    print "已建立config文件夹"
-if not os.path.exists("./config/QQBot_default.conf"):
-    open("./config/groupCheckList", "w")
-    print "已建立配置文件QQBot_default.conf"
-else:
-    conf.read('./config/QQBot_default.conf')
-    print "读取QQBot_default.conf配置"
 
 
-# pm config set
-QA_activated = bool(conf.getint("pm", "QA_module_activated"))
 
-# group config set
-tucao_activated = bool(conf.getint("group", "tucao_module_activated"))
-LF_activated = bool(conf.getint("group", "LF_module_activated"))
-repeat_activated = bool(conf.getint("group", "repeat_module_activated"))
-follow_activated = bool(conf.getint("group", "follow_module_activated"))
-callout_activated = bool(conf.getint("group", "callout_module_activated"))
+
 
 
 # -----------------
 # 方法声明
 # -----------------
+
+def read_config():
+    # pm config set
+    QA_activated = bool(conf.getint("pm", "QA_module_activated"))
+
+    # group config set
+    tucao_activated = bool(conf.getint("group", "tucao_module_activated"))
+    LF_activated = bool(conf.getint("group", "LF_module_activated"))
+    LF_reply = bool(conf.getint("group", "LF_module_reply"))
+    repeat_activated = bool(conf.getint("group", "repeat_module_activated"))
+    follow_activated = bool(conf.getint("group", "follow_module_activated"))
+    callout_activated = bool(conf.getint("group", "callout_module_activated"))
 
 def pass_time():
     global initTime
@@ -700,7 +692,8 @@ class group_thread(threading.Thread):
             replyContent += "QQ号:%s\n" % "   ".join(tmpRs['qq'])
             replyContent += "其他信息:%s\n" % "   ".join(tmpRs['other'])
 
-            self.reply(replyContent)
+            if LF_reply:
+                self.reply(replyContent)
             return True
         return False
 
@@ -781,10 +774,25 @@ class group_thread(threading.Thread):
 # -----------------
 
 if __name__ == "__main__":
+
+    conf = ConfigParser.ConfigParser()
+
+    if not os.path.isdir("./config"):
+        os.mkdir("./config")
+        print "已建立config文件夹"
+    if not os.path.exists("./config/QQBot_default.conf"):
+        open("./config/groupCheckList", "w")
+        print "已建立配置文件QQBot_default.conf"
+    else:
+        conf.read('./config/QQBot_default.conf')
+        print "读取QQBot_default.conf配置"
+    read_config()
+    logging.basicConfig(filename=conf.get("save", "log_file"), level=logging.DEBUG, format='%(asctime)s  %(filename)s[line:%(lineno)d] %(levelname)s %(message)s', datefmt='%a, %d %b %Y %H:%M:%S')
     AIbrain = Brain()
     AIbrain.start_up()
 
-    vpath = './v.jpg'
+    # vpath = './v.jpg'
+    vpath = conf.get("save", "qrcode_file")
     qq = 0
     if len(sys.argv) > 1:
         vpath = sys.argv[1]
@@ -812,7 +820,8 @@ if __name__ == "__main__":
 
         with open("./config/groupCheckList") as groupListFile:
             for group in groupListFile:
-                tmpList.append(str(int(group)))
+                if len(group) > 5 and group.isdigit():
+                    tmpList.append(str(int(group)))
             if GroupWatchList != tmpList:
                 GroupWatchList = tmpList
                 print "当前群关注列表:", GroupWatchList
@@ -826,8 +835,10 @@ if __name__ == "__main__":
         # group config set
         tucao_activated = conf.getint("group", "tucao_module_activated")
         LF_activated = conf.getint("group", "LF_module_activated")
+        LF_reply = conf.getint("group", "LF_module_reply")
         repeat_activated = conf.getint("group", "repeat_module_activated")
         follow_activated = conf.getint("group", "follow_module_activated")
         callout_activated = conf.getint("group", "callout_module_activated")
+
         # print callout_activated
         time.sleep(5)
